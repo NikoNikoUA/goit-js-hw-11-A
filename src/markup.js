@@ -10,7 +10,7 @@ const defaults = {
 };
 
 export function serviceMarkup(picturesFromBackend) {
-  const markup = picturesFromBackend.hits
+  const markup = picturesFromBackend.data.hits
     .map(
       ({
         largeImageURL,
