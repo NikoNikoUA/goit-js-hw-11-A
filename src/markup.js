@@ -9,8 +9,8 @@ const defaults = {
   comments: '0',
 };
 
-export function serviceMarkup(picturesFromBackend) {
-  const markup = picturesFromBackend.data.hits
+export function serviceMarkup(pictures) {
+  const markup = pictures.hits
     .map(
       ({
         largeImageURL,
