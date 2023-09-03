@@ -3,11 +3,10 @@ import { picturesSearch } from './search-api.js';
 import { serviceMarkup } from './markup.js';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
-import { loadMoreShow, loadMoreHide } from './load-more.js';
 
+const guard = document.querySelector('.js-guard');
 const form = document.querySelector('.search-form');
 const gallery = document.querySelector('.gallery');
-const loadMoreBtn = document.querySelector('.js-load-more');
 const finalText = document.querySelector('.js-final-text');
 let inputValue = '';
 let currentPage = 1;
@@ -15,8 +14,32 @@ let totalPages = 0;
 let totalHits = 0;
 const lightbox = new SimpleLightbox('.gallery a');
 
-loadMoreBtn.addEventListener('click', onLoadMore);
 form.addEventListener('submit', onFormSubmit);
+
+const options = {
+  root: null,
+  rootMargin: '300px',
+  // threashold: 0,
+};
+const observer = new IntersectionObserver(onLoadMore, options);
+
+function onLoadMore(entries) {
+  entries.forEach(entry => {
+    console.log(entries);
+    if (entry.isIntersecting) {
+      currentPage += 1;
+      picturesSearch(inputValue, currentPage).then(pictures => {
+        totalHits = pictures.totalHits;
+        totalPages = Math.ceil(totalHits / 40);
+        gallery.insertAdjacentHTML('beforeend', serviceMarkup(pictures));
+        lightbox.refresh();
+        if (currentPage >= totalPages) {
+          finalText.classList.replace('final-text-hidden', 'final-text');
+        }
+      });
+    }
+  });
+}
 
 function onFormSubmit(event) {
   finalText.classList.replace('final-text', 'final-text-hidden');
@@ -25,7 +48,6 @@ function onFormSubmit(event) {
   inputValue = event.target.elements.searchQuery.value;
   event.preventDefault();
   event.target.reset();
-  loadMoreHide();
   picturesSearch(inputValue, currentPage)
     .then(pictures => {
       totalHits = pictures.totalHits;
@@ -53,12 +75,14 @@ function onFormSubmit(event) {
       } else {
         gallery.innerHTML = serviceMarkup(pictures);
         lightbox.refresh();
-        loadMoreShow();
         Notify.success(`Hooray! We found ${totalHits} images.`, {
           width: '400px',
           borderRadius: '10px',
           position: 'right-corner',
         });
+      }
+      if (currentPage < totalPages) {
+        observer.observe(guard);
       }
     })
     .catch(() => {
@@ -68,34 +92,4 @@ function onFormSubmit(event) {
         position: 'center-center',
       });
     });
-}
-
-function onLoadMore() {
-  currentPage += 1;
-
-  picturesSearch(inputValue, currentPage).then(pictures => {
-    totalHits = pictures.totalHits;
-    totalPages = Math.ceil(totalHits / 40);
-    const picturesPerPage = pictures.hits.length;
-    gallery.insertAdjacentHTML('beforeend', serviceMarkup(pictures));
-    lightbox.refresh();
-
-    if (picturesPerPage * currentPage >= totalHits) {
-      loadMoreHide();
-      finalText.classList.replace('final-text-hidden', 'final-text');
-    }
-    if (currentPage >= totalPages) {
-      loadMoreHide();
-      finalText.classList.replace('final-text-hidden', 'final-text');
-    }
-
-    const { height: cardHeight } = document
-      .querySelector('.gallery')
-      .firstElementChild.getBoundingClientRect();
-
-    window.scrollBy({
-      top: cardHeight * 2,
-      behavior: 'smooth',
-    });
-  });
 }
