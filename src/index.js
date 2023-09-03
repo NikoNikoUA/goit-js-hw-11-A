@@ -35,6 +35,7 @@ function onLoadMore(entries) {
         lightbox.refresh();
         if (currentPage >= totalPages) {
           finalText.classList.replace('final-text-hidden', 'final-text');
+          observer.unobserve(guard);
         }
       });
     }

@@ -12,15 +12,10 @@ export function picturesSearch(inputValue, currentPage = '1') {
     per_page: 40,
   });
 
-  return fetch(`${BASE_URL}?${params}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      return response.json();
-    })
-    .catch(error => {
-      console.error('Error fetching data:', error);
-      throw error;
-    });
+  return fetch(`${BASE_URL}?${params}`).then(response => {
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return response.json();
+  });
 }
