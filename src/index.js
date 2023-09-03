@@ -25,7 +25,6 @@ const observer = new IntersectionObserver(onLoadMore, options);
 
 function onLoadMore(entries) {
   entries.forEach(entry => {
-    console.log(entries);
     if (entry.isIntersecting) {
       currentPage += 1;
       picturesSearch(inputValue, currentPage).then(pictures => {
@@ -33,7 +32,7 @@ function onLoadMore(entries) {
         totalPages = Math.ceil(totalHits / 40);
         gallery.insertAdjacentHTML('beforeend', serviceMarkup(pictures));
         lightbox.refresh();
-        if (currentPage >= totalPages) {
+        if (currentPage >= totalPages && totalHits > 0) {
           finalText.classList.replace('final-text-hidden', 'final-text');
           observer.unobserve(guard);
         }
@@ -49,48 +48,60 @@ function onFormSubmit(event) {
   inputValue = event.target.elements.searchQuery.value;
   event.preventDefault();
   event.target.reset();
-  picturesSearch(inputValue, currentPage)
-    .then(pictures => {
-      totalHits = pictures.totalHits;
-      totalPages = Math.ceil(totalHits / 40);
-      if (totalHits === 0) {
-        gallery.innerHTML = '';
-        Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.',
-          {
+
+  if (inputValue !== '') {
+    picturesSearch(inputValue, currentPage)
+      .then(pictures => {
+        totalHits = pictures.totalHits;
+        totalPages = Math.ceil(totalHits / 40);
+        if (totalHits === 0) {
+          gallery.innerHTML = '';
+          Notify.failure(
+            'Sorry, there are no images matching your search query. Please try again.',
+            {
+              width: '400px',
+              borderRadius: '10px',
+              position: 'right-corner',
+            }
+          );
+        } else if (inputValue === '') {
+          gallery.innerHTML = '';
+          Notify.failure(
+            'Sorry, there are no images matching your search query. Please try again.',
+            {
+              width: '400px',
+              borderRadius: '10px',
+              position: 'right-corner',
+            }
+          );
+        } else {
+          gallery.innerHTML = serviceMarkup(pictures);
+          lightbox.refresh();
+          Notify.success(`Hooray! We found ${totalHits} images.`, {
             width: '400px',
             borderRadius: '10px',
             position: 'right-corner',
-          }
-        );
-      } else if (inputValue === '') {
-        gallery.innerHTML = '';
-        Notify.failure(
-          'Sorry, there are no images matching your search query. Please try again.',
-          {
-            width: '400px',
-            borderRadius: '10px',
-            position: 'right-corner',
-          }
-        );
-      } else {
-        gallery.innerHTML = serviceMarkup(pictures);
-        lightbox.refresh();
-        Notify.success(`Hooray! We found ${totalHits} images.`, {
+          });
+        }
+        if (currentPage < totalPages) {
+          observer.observe(guard);
+        }
+      })
+      .catch(() => {
+        Notify.failure('Oops! Something went wrong! Try reloading the page!', {
           width: '400px',
           borderRadius: '10px',
-          position: 'right-corner',
+          position: 'center-center',
         });
-      }
-      if (currentPage < totalPages) {
-        observer.observe(guard);
-      }
-    })
-    .catch(() => {
-      Notify.failure('Oops! Something went wrong! Try reloading the page!', {
+      });
+  } else {
+    Notify.failure(
+      'Sorry, there are no images matching your search query. Please try again.',
+      {
         width: '400px',
         borderRadius: '10px',
-        position: 'center-center',
-      });
-    });
+        position: 'right-corner',
+      }
+    );
+  }
 }
